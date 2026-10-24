@@ -73,7 +73,7 @@ function ProgramForm({ program }: { program: Program | null }) {
   };
 
   const save = () => {
-    if (!valid || !data.uid) return;
+    if (!valid) return;
     const input = {
       name: name.trim(),
       kind,
@@ -82,18 +82,18 @@ function ProgramForm({ program }: { program: Program | null }) {
       expiringAmount: expNum && expNum > 0 ? expNum : null,
       expiringOn: expNum && expNum > 0 ? expOn : null,
     };
-    const fail = () => toast.show('Couldn’t save the program. Check your connection.', 'warn');
+    const fail = () => toast.show('Couldn’t save the program. Please try again.', 'warn');
     if (program) {
-      updateProgram(data.uid, program.id, input).catch(fail);
-      if (balanceNum !== null && balanceNum !== program.balance) setBalance(data.uid, 'programs', program.id, balanceNum).catch(fail);
+      updateProgram(program.id, input).catch(fail);
+      if (balanceNum !== null && balanceNum !== program.balance) setBalance('programs', program.id, balanceNum).catch(fail);
     } else {
-      createProgram(data.uid, input, balanceNum ?? 0, data.programs).catch(fail);
+      createProgram(input, balanceNum ?? 0).catch(fail);
     }
     router.back();
   };
 
   const remove = async () => {
-    if (!program || !data.uid) return;
+    if (!program) return;
     const ok = await dialog.confirm({
       title: `Remove ${program.name}?`,
       message: 'Its miles stop counting. Entries in the flight log stay.',
@@ -101,8 +101,8 @@ function ProgramForm({ program }: { program: Program | null }) {
       destructive: true,
     });
     if (!ok) return;
-    removeItem(data.uid, 'programs', program.id).catch(() => toast.show('Couldn’t remove it.', 'warn'));
-    if (data.settings.goal?.programId === program.id) saveGoal(data.uid, null).catch(() => undefined);
+    removeItem('programs', program.id).catch(() => toast.show('Couldn’t remove it.', 'warn'));
+    if (data.settings.goal?.programId === program.id) saveGoal(null).catch(() => undefined);
     router.back();
   };
 

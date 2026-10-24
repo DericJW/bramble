@@ -9,6 +9,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  *   targets Expo Go. Builds you install yourself (the Android APK) use the app
  *   version instead, which is what `npm run publish:apk` targets.
  * - updates.url: filled in from the EAS project id once `eas init` has run.
+ * - experiments.baseUrl: the web app's folder when it is hosted below the domain root, such as
+ *   GitHub Pages (https://you.github.io/hedgerow/). Set EXPO_BASE_URL=/hedgerow when building.
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
   const forExpoGo = process.env.EXPO_GO_UPDATE === '1';
@@ -19,8 +21,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ? { policy: 'sdkVersion' }
     : { policy: 'appVersion' }) as unknown as ExpoConfig['runtimeVersion'];
 
+  const baseUrl = process.env.EXPO_BASE_URL?.replace(/\/+$/, '') || undefined;
+
   return {
     ...config,
+    experiments: baseUrl ? { ...(config.experiments ?? {}), baseUrl } : config.experiments,
     name: config.name ?? 'Hedgerow',
     slug: config.slug ?? 'hedgerow',
     runtimeVersion,

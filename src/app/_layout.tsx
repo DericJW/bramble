@@ -6,10 +6,9 @@ import { useEffect, type ReactNode } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ConfigMissing, DataError } from '../components/BootScreens';
-import { firebaseConfigMissing } from '../config/firebase';
-import { AuthProvider, useAuth } from '../data/auth';
+import { DataError } from '../components/BootScreens';
 import { DataProvider, useData } from '../data/DataProvider';
+import { loadFarm } from '../data/store';
 import { fontAssets } from '../theme/fontAssets';
 import { PrefsProvider, usePrefs } from '../theme/prefs';
 import { MAX_APP_WIDTH, ThemeProvider, useTheme } from '../theme/theme';
@@ -24,17 +23,15 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <PrefsProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <DataProvider>
-              <WebColumn>
-                <DialogProvider>
-                  <ToastProvider>
-                    <RootNavigator fontsReady={fontsLoaded || !!fontError} />
-                  </ToastProvider>
-                </DialogProvider>
-              </WebColumn>
-            </DataProvider>
-          </AuthProvider>
+          <DataProvider>
+            <WebColumn>
+              <DialogProvider>
+                <ToastProvider>
+                  <RootNavigator fontsReady={fontsLoaded || !!fontError} />
+                </ToastProvider>
+              </DialogProvider>
+            </WebColumn>
+          </DataProvider>
         </ThemeProvider>
       </PrefsProvider>
     </SafeAreaProvider>
@@ -53,12 +50,11 @@ function WebColumn({ children }: { children: ReactNode }) {
 }
 
 function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
-  const { status } = useAuth();
   const { loaded: prefsLoaded } = usePrefs();
   const data = useData();
   const { c, night } = useTheme();
 
-  const booting = !fontsReady || !prefsLoaded || status === 'loading';
+  const booting = !fontsReady || !prefsLoaded;
 
   useEffect(() => {
     if (!booting) SplashScreen.hideAsync().catch(() => undefined);
@@ -71,18 +67,13 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   }, [night]);
 
   if (booting) return null;
-  if (firebaseConfigMissing) return <ConfigMissing />;
 
-  const signedIn = status === 'signedIn';
-  const needsSetup = signedIn && data.needsSetup;
-  const inApp = signedIn && !needsSetup;
+  const needsSetup = data.ready && data.needsSetup;
+  const inApp = data.ready && !data.needsSetup;
 
   return (
     <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.page } }}>
-        <Stack.Protected guard={!signedIn}>
-          <Stack.Screen name="sign-in" />
-        </Stack.Protected>
         <Stack.Protected guard={needsSetup}>
           <Stack.Screen name="welcome" />
         </Stack.Protected>
@@ -99,8 +90,10 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="search" />
         </Stack.Protected>
       </Stack>
-      {signedIn && !data.ready ? (
-        <View style={StyleSheet.absoluteFill}>{data.error ? <DataError message={data.error} /> : <LoadingScreen />}</View>
+      {!data.ready ? (
+        <View style={StyleSheet.absoluteFill}>
+          {data.error ? <DataError message={data.error} onRetry={() => loadFarm().catch(() => undefined)} /> : <LoadingScreen />}
+        </View>
       ) : null}
     </View>
   );

@@ -49,7 +49,6 @@ function Gone() {
 }
 
 function AccountForm({ account }: { account: Account | null }) {
-  const data = useData();
   const { now } = useTheme();
   const { fmt, currency } = useMoney();
   const dialog = useDialog();
@@ -68,15 +67,15 @@ function AccountForm({ account }: { account: Account | null }) {
   };
 
   const save = () => {
-    if (!valid || !data.uid) return;
+    if (!valid) return;
     const input = { name: name.trim(), kind, icon };
-    const job = account ? updateAccount(data.uid, account.id, input) : createAccount(data.uid, input, openingCents ?? 0, data.accounts);
-    job.catch(() => toast.show('Couldn’t save the account. Check your connection.', 'warn'));
+    const job = account ? updateAccount(account.id, input) : createAccount(input, openingCents ?? 0);
+    job.catch(() => toast.show('Couldn’t save the account. Please try again.', 'warn'));
     router.back();
   };
 
   const remove = async () => {
-    if (!account || !data.uid) return;
+    if (!account) return;
     const ok = await dialog.confirm({
       title: `Remove ${account.name}?`,
       message: 'Its balance stops counting towards your money. Entries that mention it stay in your history.',
@@ -84,7 +83,7 @@ function AccountForm({ account }: { account: Account | null }) {
       destructive: true,
     });
     if (!ok) return;
-    removeItem(data.uid, 'accounts', account.id).catch(() => toast.show('Couldn’t remove it. Check your connection.', 'warn'));
+    removeItem('accounts', account.id).catch(() => toast.show('Couldn’t remove it. Please try again.', 'warn'));
     router.back();
   };
 

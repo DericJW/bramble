@@ -207,7 +207,7 @@ export function SubScreen({ title, onClose, closeKind = 'back', right, children,
   );
 }
 
-/** Shown while your data is on its way from Firestore. */
+/** Shown while the farm is read from this device. */
 export function LoadingScreen({ text = 'Tending the farm…' }: { text?: string }) {
   const { width, tone } = useTheme();
   return (

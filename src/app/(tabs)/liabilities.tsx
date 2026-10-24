@@ -126,8 +126,8 @@ function DueSoonCard({ liability }: { liability: Liability }) {
         (nextDate ? ` and moves the due date to ${nextDate}.` : '.'),
       confirmLabel: 'Mark as paid',
     });
-    if (!ok || !data.uid) return;
-    saveEntry(data.uid, data.effectState, markPaidDraft(liability, now), null).catch(() => toast.show('Couldn’t save that payment. Check your connection.', 'warn'));
+    if (!ok) return;
+    saveEntry(markPaidDraft(liability, now), null).catch(() => toast.show('Couldn’t save that payment. Please try again.', 'warn'));
     if (prefs.haptics) haptic('success');
     toast.show(`${liability.name} marked as paid`);
   };

@@ -26,14 +26,13 @@ export default function GoalScreen() {
   const program = data.programs.find((p) => p.id === programId);
 
   const save = () => {
-    if (!valid || !data.uid || targetNum === null) return;
-    saveGoal(data.uid, { label: label.trim(), programId, target: targetNum }).catch(() => toast.show('Couldn’t save the goal.', 'warn'));
+    if (!valid || targetNum === null) return;
+    saveGoal({ label: label.trim(), programId, target: targetNum }).catch(() => toast.show('Couldn’t save the goal.', 'warn'));
     router.back();
   };
 
   const clear = () => {
-    if (!data.uid) return;
-    saveGoal(data.uid, null).catch(() => toast.show('Couldn’t remove the goal.', 'warn'));
+    saveGoal(null).catch(() => toast.show('Couldn’t remove the goal.', 'warn'));
     router.back();
   };
 

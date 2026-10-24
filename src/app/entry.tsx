@@ -1,18 +1,14 @@
-import { doc, getDoc } from 'firebase/firestore';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
-import { recallEntry } from '../components/EntryRow';
 import { unitOf } from '../data/calc';
-import { toEntry } from '../data/convert';
 import { useData } from '../data/DataProvider';
 import { buildDraft, deriveForm, formProblem, initialForm, PROBLEM_TEXT, type EntryFormState, type EntryParams, type ProblemCode } from '../data/entryForm';
 import { useMoney } from '../data/hooks';
 import { deleteEntry, saveEntry } from '../data/repo';
 import type { Entry, EntryType, SourceKind } from '../data/types';
 import { addMonths, dateRowLabel, formatShortDate } from '../lib/dates';
-import { getDb } from '../lib/firebase';
 import { haptic } from '../lib/haptics';
 import { displayDigits, formatCount, pressKey } from '../lib/money';
 import { useFlip } from '../scenes/Anim';
@@ -26,7 +22,7 @@ import { Keypad } from '../ui/Keypad';
 import { Rows, RowButton, ToggleRow } from '../ui/Layout';
 import { useDialog, useToast } from '../ui/Overlays';
 import { DateSheet, OptionSheet, type OptionItem } from '../ui/Pickers';
-import { LoadingScreen, SubScreen } from '../ui/Screen';
+import { SubScreen } from '../ui/Screen';
 import { Sprite } from '../ui/Sprite';
 import { Txt } from '../ui/Txt';
 
@@ -39,35 +35,17 @@ const TYPES: { value: EntryType; label: string }[] = [
   { value: 'liability', label: 'Owed' },
 ];
 
-/** Finds the entry being edited: from memory if it was just tapped, otherwise from Firestore. */
-function useExistingEntry(id: string | undefined): { entry: Entry | null; loading: boolean } {
+/** Finds the entry being edited. */
+function useExistingEntry(id: string | undefined): { entry: Entry | null } {
   const data = useData();
-  const local = id ? (data.monthEntries.find((e) => e.id === id) ?? data.milesEntries.find((e) => e.id === id) ?? recallEntry(id) ?? null) : null;
-  const [fetched, setFetched] = useState<{ id: string; entry: Entry | null } | null>(null);
-  useEffect(() => {
-    if (!id || local || !data.uid) return;
-    let alive = true;
-    getDoc(doc(getDb(), 'users', data.uid, 'entries', id))
-      .then((snap) => {
-        if (alive) setFetched({ id, entry: snap.exists() ? toEntry(snap.id, snap.data({ serverTimestamps: 'estimate' }) ?? {}) : null });
-      })
-      .catch(() => {
-        if (alive) setFetched({ id, entry: null });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [id, local, data.uid]);
-  if (!id) return { entry: null, loading: false };
-  if (local) return { entry: local, loading: false };
-  if (fetched && fetched.id === id) return { entry: fetched.entry, loading: false };
-  return { entry: null, loading: true };
+  if (!id) return { entry: null };
+  return { entry: data.entries.find((e) => e.id === id) ?? null };
 }
 
 export default function EntryScreen() {
   const params = useLocalSearchParams() as Params;
-  const { entry, loading } = useExistingEntry(params.id);
-  if (loading) return <LoadingScreen text="Finding that entry…" />;
+  // An entry that has since been deleted opens as a new one.
+  const { entry } = useExistingEntry(params.id);
   return <EntryForm params={params} existing={entry} key={entry?.id ?? 'new'} />;
 }
 
@@ -94,10 +72,10 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
   const problemAction = problemCode ? PROBLEM_ACTIONS[problemCode] : undefined;
 
   const save = () => {
-    if (problemCode || !data.uid) return;
+    if (problemCode) return;
     const draft = buildDraft(f, d, existing);
     if (!draft) return;
-    saveEntry(data.uid, data.effectState, draft, existing).catch(() => toast.show('Couldn’t save that entry. Please try again.', 'warn'));
+    saveEntry(draft, existing).catch(() => toast.show('Couldn’t save that entry. Please try again.', 'warn'));
     const remember: Parameters<typeof setPrefs>[0] = {};
     if (f.type === 'expense') {
       remember.lastCategoryId = f.categoryId;
@@ -111,7 +89,7 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
   };
 
   const remove = async () => {
-    if (!existing || !data.uid) return;
+    if (!existing) return;
     const ok = await dialog.confirm({
       title: 'Delete this entry?',
       message: 'Any balance it changed will be put back.',
@@ -119,7 +97,7 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
       destructive: true,
     });
     if (!ok) return;
-    deleteEntry(data.uid, data.effectState, existing).catch(() => toast.show('Couldn’t delete. Check your connection.', 'warn'));
+    deleteEntry(existing).catch(() => toast.show('Couldn’t delete. Please try again.', 'warn'));
     if (prefs.haptics) haptic('warn');
     router.back();
   };

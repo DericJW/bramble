@@ -21,6 +21,8 @@ export type Prefs = {
   lastCategoryId: string | null;
   lastProgramId: string | null;
   lastPayFromId: string | null;
+  /** When a backup was last exported from this phone (ms since 1970). */
+  lastBackupAt: number | null;
 };
 
 export const DEFAULT_PREFS: Prefs = {
@@ -33,6 +35,7 @@ export const DEFAULT_PREFS: Prefs = {
   lastCategoryId: null,
   lastProgramId: null,
   lastPayFromId: null,
+  lastBackupAt: null,
 };
 
 const KEY = 'hedgerow:prefs:v1';

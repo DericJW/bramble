@@ -93,7 +93,7 @@ function LiabilityForm({ liability }: { liability: Liability | null }) {
   };
 
   const save = () => {
-    if (!valid || !data.uid) return;
+    if (!valid) return;
     const input = {
       name: name.trim(),
       kind,
@@ -106,18 +106,18 @@ function LiabilityForm({ liability }: { liability: Liability | null }) {
       payFromAccountId: payFrom,
       note: note.trim(),
     };
-    const fail = () => toast.show('Couldn’t save. Check your connection.', 'warn');
+    const fail = () => toast.show('Couldn’t save. Please try again.', 'warn');
     if (liability) {
-      updateLiability(data.uid, liability.id, input).catch(fail);
-      if (balanceCents !== null && balanceCents !== liability.balance) setBalance(data.uid, 'liabilities', liability.id, balanceCents).catch(fail);
+      updateLiability(liability.id, input).catch(fail);
+      if (balanceCents !== null && balanceCents !== liability.balance) setBalance('liabilities', liability.id, balanceCents).catch(fail);
     } else {
-      createLiability(data.uid, input, balanceCents ?? 0, data.liabilities).catch(fail);
+      createLiability(input, balanceCents ?? 0).catch(fail);
     }
     router.back();
   };
 
   const remove = async () => {
-    if (!liability || !data.uid) return;
+    if (!liability) return;
     const ok = await dialog.confirm({
       title: `Remove ${liability.name}?`,
       message: 'It stops counting towards what you owe. Payments already logged stay in your history.',
@@ -125,12 +125,12 @@ function LiabilityForm({ liability }: { liability: Liability | null }) {
       destructive: true,
     });
     if (!ok) return;
-    removeItem(data.uid, 'liabilities', liability.id).catch(() => toast.show('Couldn’t remove it.', 'warn'));
+    removeItem('liabilities', liability.id).catch(() => toast.show('Couldn’t remove it.', 'warn'));
     router.back();
   };
 
   const markPaid = async () => {
-    if (!liability || !data.uid) return;
+    if (!liability) return;
     const amount = dueAmountOf(liability);
     const from = data.accounts.find((a) => a.id === liability.payFromAccountId);
     const ok = await dialog.confirm({
@@ -141,7 +141,7 @@ function LiabilityForm({ liability }: { liability: Liability | null }) {
       confirmLabel: 'Mark as paid',
     });
     if (!ok) return;
-    saveEntry(data.uid, data.effectState, markPaidDraft(liability, now), null).catch(() => toast.show('Couldn’t save the payment.', 'warn'));
+    saveEntry(markPaidDraft(liability, now), null).catch(() => toast.show('Couldn’t save the payment.', 'warn'));
     if (prefs.haptics) haptic('success');
     toast.show(`${liability.name} marked as paid`);
   };

@@ -44,11 +44,9 @@ export default function RecountScreen() {
   const done = index >= accounts.length;
 
   const record = (after: number | null) => {
-    if (!live || !data.uid) return;
+    if (!live) return;
     const amount = after ?? live.balance;
     saveEntry(
-      data.uid,
-      data.effectState,
       {
         type: 'balance',
         date: atNoon(new Date()),
@@ -59,7 +57,7 @@ export default function RecountScreen() {
         prevCountedAt: live.lastCountedAt,
       },
       null,
-    ).catch(() => toast.show('Couldn’t save that count. Check your connection.', 'warn'));
+    ).catch(() => toast.show('Couldn’t save that count. Please try again.', 'warn'));
     if (prefs.haptics) haptic('tap');
     setResults((r) => [...r, { account: live, before: live.balance, after: amount }]);
     setDigits('');

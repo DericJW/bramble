@@ -1,15 +1,15 @@
 /**
  * The shapes the app works with. Money is in integer cents, miles and points are whole
- * numbers, and dates are JS Dates (Firestore Timestamps are converted on the way in).
+ * numbers, and dates are JS Dates.
  *
- * Firestore layout (everything is private to the signed-in user):
- *   users/{uid}                     Settings
- *   users/{uid}/accounts/{id}       Account      (money you have)
- *   users/{uid}/programs/{id}       Program      (miles and points)
- *   users/{uid}/liabilities/{id}    Liability    (cards, loans, IOUs)
- *   users/{uid}/categories/{id}     Category     (spending pouches with a monthly budget)
- *   users/{uid}/entries/{id}        Entry        (everything you key in)
- *   users/{uid}/snapshots/{yyyy-mm} Snapshot     (net worth at the start of each month)
+ * Everything is kept on the device (see store.ts) as one farm:
+ *   settings      Settings
+ *   accounts      Account      (money you have)
+ *   programs      Program      (miles and points)
+ *   liabilities   Liability    (cards, loans, IOUs)
+ *   categories    Category     (spending pouches with a monthly budget)
+ *   entries       Entry        (everything you key in)
+ *   snapshots     Snapshot     (net worth at the start of each month)
  */
 
 export type AccountKind = 'bank' | 'investment' | 'cash';

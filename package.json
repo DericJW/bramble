@@ -11,8 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "npx --yes tsx --test tests/*.test.ts",
     "build:web": "expo export -p web",
-    "deploy:web": "expo export -p web && firebase deploy --only hosting",
-    "deploy:rules": "firebase deploy --only firestore:rules",
+    "build:pages": "expo export -p web && node scripts/build-pages.mjs",
     "publish:go": "node scripts/publish.mjs go",
     "publish:apk": "node scripts/publish.mjs apk",
     "build:apk": "eas build -p android --profile preview"
@@ -32,7 +31,6 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "expo-updates": "~57.0.23",
-    "firebase": "^12.17.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",

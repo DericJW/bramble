@@ -1,5 +1,5 @@
 /**
- * Reading Firestore documents safely: every field gets a sensible default, so an old or
+ * Reading stored or imported records safely: every field gets a sensible default, so an old or
  * hand-edited document never crashes a screen.
  */
 import { DEFAULT_CURRENCY } from '../lib/money';
@@ -194,7 +194,7 @@ export function toEntry(id: string, r: Raw): Entry | null {
   }
 }
 
-/** The fields written to Firestore for an entry (ids and timestamps are added by the caller). */
+/** The fields saved for an entry (ids and timestamps are added by the caller). */
 export function entryFields(d: EntryDraft): Raw {
   const base: Raw = { type: d.type, date: d.date, note: d.note.trim() };
   switch (d.type) {

@@ -2,9 +2,11 @@ import Constants from 'expo-constants';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { authErrorMessage, signOut, upgradeGuest, useAuth } from '../data/auth';
 import { useData } from '../data/DataProvider';
-import { clearEverything, saveSettings } from '../data/repo';
+import { clearEverything, restoreFarm, saveSettings } from '../data/repo';
+import { backupText, readBackup, type ParsedBackup } from '../data/store';
+import { canPickBackupFile, pickBackupFile, saveBackup } from '../lib/backupFile';
+import { dayKey, formatLongDate, formatSmartDate } from '../lib/dates';
 import { currencyInfo, CURRENCIES } from '../lib/money';
 import { usePrefs, type BodyFont, type ThemeMode } from '../theme/prefs';
 import { usePalette } from '../theme/theme';
@@ -12,7 +14,7 @@ import { PxButton } from '../ui/Buttons';
 import { Frame } from '../ui/Frame';
 import { Field, Segmented } from '../ui/Inputs';
 import { Rows, RowButton, SectionTitle, ToggleRow } from '../ui/Layout';
-import { useDialog, useToast } from '../ui/Overlays';
+import { Sheet, useDialog, useToast } from '../ui/Overlays';
 import { OptionSheet } from '../ui/Pickers';
 import { SubScreen } from '../ui/Screen';
 import { Label, Txt } from '../ui/Txt';
@@ -37,96 +39,97 @@ const COUNT_DAYS: { value: '7' | '14' | '30'; label: string }[] = [
 
 export default function SettingsScreen() {
   const c = usePalette();
-  const { user, refresh } = useAuth();
   const data = useData();
   const { prefs, setPrefs } = usePrefs();
   const dialog = useDialog();
   const toast = useToast();
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasted, setPasted] = useState('');
   const [busy, setBusy] = useState(false);
-  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
-  const guest = !!user?.isAnonymous;
   const countDays = String(data.settings.countEveryDays);
 
-  const upgrade = async () => {
-    setBusy(true);
-    setUpgradeError(null);
+  const exportBackup = () => {
+    const name = `hedgerow-backup-${dayKey(new Date())}.json`;
+    // Straight from the tap, so the share sheet is allowed to open.
+    saveBackup(name, backupText())
+      .then((result) => {
+        if (result === 'saved') {
+          setPrefs({ lastBackupAt: Date.now() });
+          toast.show('Backup ready. Keep it somewhere safe, like iCloud Drive.');
+        }
+      })
+      .catch(() => toast.show('Couldn’t make the backup. Please try again.', 'warn'));
+  };
+
+  const restore = async (text: string | null) => {
+    if (!text) return;
+    let backup: ParsedBackup;
     try {
-      await upgradeGuest(email, password);
-      refresh();
-      toast.show('Saved! Sign in with this email on any device.');
-      setPassword('');
+      backup = readBackup(text.trim());
     } catch (e) {
-      setUpgradeError(authErrorMessage(e));
+      await dialog.alert('Can’t use that backup', e instanceof Error ? e.message : 'That isn’t a Hedgerow backup.');
+      return;
+    }
+    const when = backup.exportedAt ? ` from ${formatLongDate(backup.exportedAt)}` : '';
+    const ok = await dialog.confirm({
+      title: 'Replace everything on this phone?',
+      message: `This backup${when} has ${backup.farm.accounts.length} accounts and ${backup.farm.entries.length} entries. What’s on this phone now will be replaced.`,
+      confirmLabel: 'Restore backup',
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await restoreFarm(backup.farm);
+      setPasteOpen(false);
+      setPasted('');
+      toast.show('Backup restored.');
+    } catch {
+      toast.show('Couldn’t restore it. Check your phone has some free storage.', 'warn');
     } finally {
       setBusy(false);
     }
   };
 
-  const doSignOut = async () => {
-    const ok = await dialog.confirm(
-      guest
-        ? {
-            title: 'Sign out of a guest farm?',
-            message: 'Guest farms can’t be opened again after signing out. Save it to an email first if you want to keep it.',
-            confirmLabel: 'Sign out anyway',
-            destructive: true,
-          }
-        : { title: 'Sign out?', message: 'Your farm stays safe in Firebase. Sign in again any time.', confirmLabel: 'Sign out' },
-    );
-    if (ok) signOut().catch((e) => toast.show(authErrorMessage(e), 'warn'));
+  const startRestore = () => {
+    if (!canPickBackupFile) {
+      setPasteOpen(true);
+      return;
+    }
+    pickBackupFile()
+      .then(restore)
+      .catch(() => toast.show('Couldn’t open that file.', 'warn'));
   };
 
   const wipe = async () => {
     const ok = await dialog.confirm({
       title: 'Delete all your data?',
-      message: 'Every account, program, liability, pouch and entry will be deleted from Firebase. This can’t be undone.',
+      message: 'Every account, program, liability, pouch and entry on this phone will be deleted. Only a backup can bring them back.',
       confirmLabel: 'Delete everything',
       destructive: true,
     });
-    if (!ok || !data.uid) return;
+    if (!ok) return;
     setBusy(true);
     try {
-      await clearEverything(data.uid);
+      await clearEverything();
       toast.show('All cleared. Fresh fields!');
-    } catch (e) {
-      toast.show(e instanceof Error ? e.message : 'Couldn’t delete everything. Try again.', 'warn');
+    } catch {
+      toast.show('Couldn’t delete everything. Please try again.', 'warn');
     } finally {
       setBusy(false);
     }
   };
 
   const version = Constants.expoConfig?.version ?? '1.0.0';
+  const lastBackup = prefs.lastBackupAt ? `Last backup: ${formatSmartDate(new Date(prefs.lastBackupAt))}` : 'No backup made from this phone yet.';
 
   return (
     <SubScreen title="Settings" compact>
       <View style={{ paddingTop: 8 }}>
-        <SectionTitle title="Your farm" />
+        <SectionTitle title="Look and feel" />
       </View>
-      <Frame innerStyle={{ padding: 16, gap: 12 }}>
-        {guest ? (
-          <>
-            <Txt weight="bold">You’re using a guest farm</Txt>
-            <Txt muted lh={20}>
-              It lives on this device’s sign-in only. Add an email and password to keep it safe and open it on other devices.
-            </Txt>
-            <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@example.com" />
-            <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" placeholder="At least 6 characters" error={upgradeError} />
-            <PxButton label="Save my farm" busy={busy} disabled={!email || password.length < 6} onPress={upgrade} />
-          </>
-        ) : (
-          <View style={{ gap: 2 }}>
-            <Label size={12}>Signed in as</Label>
-            <Txt weight="bold">{user?.email ?? 'Unknown'}</Txt>
-          </View>
-        )}
-        <PxButton label="Sign out" kind="secondary" icon="iDoor" onPress={doSignOut} />
-      </Frame>
-
-      <SectionTitle title="Look and feel" />
       <Frame innerStyle={{ padding: 16, gap: 14 }}>
         <View style={{ gap: 6 }}>
           <Label>Day or night</Label>
@@ -156,7 +159,7 @@ export default function SettingsScreen() {
           <Segmented
             options={COUNT_DAYS}
             value={(['7', '14', '30'] as const).find((d) => d === countDays) ?? '14'}
-            onChange={(d) => data.uid && saveSettings(data.uid, { countEveryDays: Number(d) }).catch(() => undefined)}
+            onChange={(d) => saveSettings({ countEveryDays: Number(d) }).catch(() => undefined)}
           />
         </View>
       </Frame>
@@ -164,21 +167,36 @@ export default function SettingsScreen() {
       <SectionTitle title="Your data" />
       <Frame innerStyle={{ padding: 16, gap: 12 }}>
         <Txt muted lh={20}>
-          Everything is stored in your own Firebase project and only your sign-in can read it.
+          Everything is saved on this phone only. Nothing is sent anywhere, so export a backup now and then and keep it in iCloud Drive or Files.
         </Txt>
-        <PxButton label="Delete all my data" kind="danger" icon="iTrash" busy={busy} onPress={wipe} />
+        <Txt size={13} weight="bold" color={prefs.lastBackupAt ? c.muted : c.warnStrong}>
+          {lastBackup}
+        </Txt>
+        <PxButton label="Export backup" icon="iUp" onPress={exportBackup} />
+        <PxButton label="Restore from a backup" kind="secondary" busy={busy && pasteOpen} onPress={startRestore} />
+        <PxButton label="Delete all my data" kind="danger" icon="iTrash" busy={busy && !pasteOpen} onPress={wipe} />
       </Frame>
 
       <Txt size={13} muted center style={{ marginTop: 8 }}>
         {`Hedgerow ${version} · made with care by Bramble`}
       </Txt>
 
+      <Sheet visible={pasteOpen} title="Restore from a backup" onClose={() => setPasteOpen(false)}>
+        <View style={{ gap: 12 }}>
+          <Txt muted lh={20}>
+            Paste the text of a Hedgerow backup here.
+          </Txt>
+          <Field label="Backup" value={pasted} onChangeText={setPasted} multiline autoCapitalize="none" autoCorrect={false} placeholder="Paste the backup text" style={{ maxHeight: 160 }} />
+          <PxButton label="Restore" busy={busy} disabled={!pasted.trim()} onPress={() => restore(pasted)} />
+        </View>
+      </Sheet>
+
       <OptionSheet
         visible={currencyOpen}
         title="Currency"
         options={CURRENCIES.map((cur) => ({ key: cur.code, label: `${cur.code} · ${cur.symbol.trim()}`, sub: cur.name }))}
         value={data.settings.currency}
-        onPick={(code) => data.uid && saveSettings(data.uid, { currency: code }).catch(() => undefined)}
+        onPick={(code) => saveSettings({ currency: code }).catch(() => undefined)}
         onClose={() => setCurrencyOpen(false)}
         footer={
           <Txt size={13} muted lh={18} style={{ color: c.muted }}>

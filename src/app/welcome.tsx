@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useData } from '../data/DataProvider';
 import { setupFresh, setupSample } from '../data/repo';
 import { currencyInfo, CURRENCIES, DEFAULT_CURRENCY } from '../lib/money';
 import MeadowScene from '../scenes/MeadowScene';
@@ -25,20 +24,18 @@ export default function WelcomeScreen() {
   const { width, tone } = useTheme();
   const c = usePalette();
   const insets = useSafeAreaInsets();
-  const data = useData();
   const toast = useToast();
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<null | 'fresh' | 'sample'>(null);
 
   const start = async (kind: 'fresh' | 'sample') => {
-    if (!data.uid) return;
     setBusy(kind);
     try {
-      if (kind === 'fresh') await setupFresh(data.uid, currency);
-      else await setupSample(data.uid);
+      if (kind === 'fresh') await setupFresh(currency);
+      else await setupSample();
     } catch {
-      toast.show('Couldn’t reach Firebase. Check your connection and the Firestore rules.', 'warn');
+      toast.show('Couldn’t save on this phone. Check it has some free storage and try again.', 'warn');
       setBusy(null);
     }
   };
@@ -58,7 +55,7 @@ export default function WelcomeScreen() {
               <Txt face="pixel" weight="bold" size={20} lh={26}>
                 Welcome to the farm!
               </Txt>
-              <Txt lh={20}>Let’s set up your ledger. You can change any of this later.</Txt>
+              <Txt lh={20}>Let’s set up your ledger. Everything you key in stays on this phone.</Txt>
             </View>
           </Frame>
           <Frame innerStyle={{ padding: 16, gap: 10 }}>

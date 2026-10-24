@@ -2,7 +2,7 @@
  * What an entry does to your accounts, cards, loans and programs.
  *
  * Saving an entry applies its effects; deleting it applies them in reverse; editing it does
- * both in one batch. Keeping this pure (no Firestore here) means it can be unit tested.
+ * both in one batch. Keeping this pure (no storage here) means it can be unit tested.
  */
 import { addMonths, isSameDay } from '../lib/dates';
 import type { Account, DueChange, Entry, EntryDraft, Liability, Program } from './types';

@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
 
 import { EntryRow } from '../components/EntryRow';
-import { sortEntries } from '../data/calc';
 import { useData } from '../data/DataProvider';
-import { fetchAllExpenses } from '../data/repo';
 import type { Entry } from '../data/types';
 import { formatMonthYear, monthKey } from '../lib/dates';
 import { centsToInput, formatMoney } from '../lib/money';
@@ -20,27 +18,10 @@ export default function SearchScreen() {
   const data = useData();
   const c = usePalette();
   const { night, body } = useTheme();
-  const [all, setAll] = useState<Entry[] | null>(null);
-  const [failed, setFailed] = useState(false);
   const [q, setQ] = useState('');
-
-  useEffect(() => {
-    if (!data.uid) return;
-    let alive = true;
-    fetchAllExpenses(data.uid)
-      .then((list) => {
-        if (alive) setAll(sortEntries(list));
-      })
-      .catch(() => {
-        if (alive) setFailed(true);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [data.uid]);
+  const all = useMemo(() => data.entries.filter((e) => e.type === 'expense'), [data.entries]);
 
   const results = useMemo(() => {
-    if (!all) return [];
     const needle = q.trim().toLowerCase();
     if (!needle) return all.slice(0, 60);
     return all
@@ -80,11 +61,7 @@ export default function SearchScreen() {
           style={[fontStyle(body, 'bold'), { flex: 1, fontSize: 16, color: c.ink, paddingVertical: 12 }]}
         />
       </Frame>
-      {failed ? (
-        <Txt muted>Couldn’t load your spending. Check your connection.</Txt>
-      ) : !all ? (
-        <Txt muted>Gathering every receipt…</Txt>
-      ) : groups.length === 0 ? (
+      {groups.length === 0 ? (
         <Txt muted>{q ? 'Nothing matches that.' : 'No spending logged yet.'}</Txt>
       ) : (
         groups.map((g) => (

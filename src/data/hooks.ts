@@ -1,13 +1,10 @@
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { addMonths, isSameMonth, startOfMonth } from '../lib/dates';
-import { getDb } from '../lib/firebase';
+import { isSameMonth } from '../lib/dates';
 import { currencyInfo, formatMoney, type CurrencyInfo, type MoneyFormat } from '../lib/money';
 import { usePrefs } from '../theme/prefs';
-import { sortEntries } from './calc';
-import { toEntry } from './convert';
-import { explainFirestoreError, useData } from './DataProvider';
+import { useData } from './DataProvider';
+import { refsOf } from './effects';
 import type { Entry } from './types';
 
 export type MoneyFormatter = {
@@ -26,64 +23,21 @@ export function useMoney(): MoneyFormatter {
   return useMemo(() => ({ fmt, hidden, currency: currencyInfo(code) }), [fmt, hidden, code]);
 }
 
-/** Entries for any month: the current month comes from the shared data, others are fetched live. */
+/** Entries for any month, newest first. */
 export function useMonthEntries(month: Date): { entries: Entry[]; loading: boolean; error: string | null } {
-  const { uid, monthEntries } = useData();
-  const current = isSameMonth(month, new Date());
-  const key = startOfMonth(month).getTime();
-  const [state, setState] = useState<{ key: number; entries: Entry[]; loading: boolean; error: string | null }>({
-    key: 0,
-    entries: [],
-    loading: true,
-    error: null,
-  });
-
-  useEffect(() => {
-    if (current || !uid) return undefined;
-    setState({ key, entries: [], loading: true, error: null });
-    const start = new Date(key);
-    const end = addMonths(start, 1);
-    return onSnapshot(
-      query(collection(getDb(), 'users', uid, 'entries'), where('date', '>=', start), where('date', '<', end)),
-      (snap) => {
-        const list: Entry[] = [];
-        snap.docs.forEach((d) => {
-          const e = toEntry(d.id, d.data({ serverTimestamps: 'estimate' }));
-          if (e) list.push(e);
-        });
-        setState({ key, entries: sortEntries(list), loading: false, error: null });
-      },
-      (e) => setState({ key, entries: [], loading: false, error: explainFirestoreError(e) }),
-    );
-  }, [current, uid, key]);
-
-  if (current) return { entries: monthEntries, loading: false, error: null };
-  if (state.key !== key) return { entries: [], loading: true, error: null };
-  return { entries: state.entries, loading: state.loading, error: state.error };
+  const { entries, monthEntries } = useData();
+  const key = month.getFullYear() * 12 + month.getMonth();
+  const list = useMemo(
+    () => (isSameMonth(month, new Date()) ? monthEntries : entries.filter((e) => isSameMonth(e.date, month))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, monthEntries, key],
+  );
+  return { entries: list, loading: false, error: null };
 }
 
 /** Every entry that mentions an account, program, liability or pouch (newest first). */
 export function useEntriesFor(refId: string | null): { entries: Entry[]; loading: boolean } {
-  const { uid } = useData();
-  const [state, setState] = useState<{ id: string | null; entries: Entry[]; loading: boolean }>({ id: null, entries: [], loading: true });
-
-  useEffect(() => {
-    if (!uid || !refId) return undefined;
-    return onSnapshot(
-      query(collection(getDb(), 'users', uid, 'entries'), where('refs', 'array-contains', refId)),
-      (snap) => {
-        const list: Entry[] = [];
-        snap.docs.forEach((d) => {
-          const e = toEntry(d.id, d.data({ serverTimestamps: 'estimate' }));
-          if (e) list.push(e);
-        });
-        setState({ id: refId, entries: sortEntries(list), loading: false });
-      },
-      () => setState({ id: refId, entries: [], loading: false }),
-    );
-  }, [uid, refId]);
-
-  if (!refId) return { entries: [], loading: false };
-  if (state.id !== refId) return { entries: [], loading: true };
-  return { entries: state.entries, loading: state.loading };
+  const { entries } = useData();
+  const list = useMemo(() => (refId ? entries.filter((e) => refsOf(e).includes(refId)) : []), [entries, refId]);
+  return { entries: list, loading: false };
 }

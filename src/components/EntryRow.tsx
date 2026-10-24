@@ -10,19 +10,7 @@ import { Tile } from '../ui/Sprite';
 import { Txt } from '../ui/Txt';
 import { describeEntry } from './entryText';
 
-/** Entries opened from a list are kept here so the edit screen can show them at once. */
-const opened = new Map<string, Entry>();
-
-export function rememberEntry(e: Entry) {
-  opened.set(e.id, e);
-}
-
-export function recallEntry(id: string): Entry | undefined {
-  return opened.get(id);
-}
-
 export function openEntry(e: Entry) {
-  rememberEntry(e);
   router.push({ pathname: '/entry', params: { id: e.id } });
 }
 

@@ -52,11 +52,11 @@ export default function BudgetsScreen() {
   const total = parsed.reduce((t, p) => t + (p.cents ?? 0), 0);
 
   const save = () => {
-    if (bad || !data.uid) return;
+    if (bad) return;
     const list: CategoryInput[] = parsed
       .filter((p) => p.row.name.trim() !== '' || p.row.id)
       .map((p, i) => ({ id: p.row.id, name: p.row.name.trim() || 'Pouch', icon: p.row.icon, budget: p.cents ?? 0, order: i }));
-    saveCategories(data.uid, list, removed).catch(() => toast.show('Couldn’t save your budgets. Check your connection.', 'warn'));
+    saveCategories(list, removed).catch(() => toast.show('Couldn’t save your budgets. Please try again.', 'warn'));
     toast.show('Budgets saved');
     router.back();
   };
