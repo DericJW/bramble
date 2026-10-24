@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Hedgerow",
+    "slug": "hedgerow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "hedgerow",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#EEDFBD",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.hedgerow.ledger"
+    },
+    "android": {
+      "package": "app.hedgerow.ledger",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#9DD0EC"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Hedgerow",
+      "shortName": "Hedgerow",
+      "themeColor": "#7A4A2A",
+      "backgroundColor": "#EEDFBD"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#EEDFBD",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 160
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {}
+    }
+  }
+}
