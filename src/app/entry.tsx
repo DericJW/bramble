@@ -102,12 +102,13 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
     router.back();
   };
 
+  // Works from the latest digits, so quick taps between screen updates are never lost.
   const onKey = (k: string) => {
-    const next = pressKey(f.digits, k, { allowDecimal });
-    if (next !== f.digits) {
-      set({ digits: next });
-      if (prefs.haptics) haptic('tap');
-    }
+    setF((prev) => {
+      const next = pressKey(prev.digits, k, { allowDecimal });
+      return next === prev.digits ? prev : { ...prev, digits: next };
+    });
+    if (prefs.haptics) haptic('tap');
   };
 
   /* ---------- text for the amount card ---------- */

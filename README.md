@@ -8,6 +8,21 @@ Built with Expo (SDK 57, React Native 0.86) and Expo Router. On iPhone it runs a
 web app served from GitHub Pages, and it works offline. No App Store, no Apple Developer
 account and no server needed.
 
+## What it looks like
+
+![The five tabs: Home, Money, Miles, Expenses and Liabilities](docs/screenshots/preview.jpg)
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/welcome.jpg" width="240" alt="Welcome screen"><br><sub>First open: pick a currency</sub></td>
+    <td align="center"><img src="docs/screenshots/entry.jpg" width="240" alt="New entry keypad"><br><sub>One keypad for every entry</sub></td>
+    <td align="center"><img src="docs/screenshots/home-night.jpg" width="240" alt="Home at night"><br><sub>The farm after 7pm</sub></td>
+  </tr>
+</table>
+
+These are screenshots of the live app at an iPhone's screen size, using **Explore the sample farm**.
+On your phone you start empty, or load the same sample to look around first.
+
 ## What's inside
 
 - **Home**: net worth on a wooden plank (with the change since the 1st), Bramble's daily note, four
