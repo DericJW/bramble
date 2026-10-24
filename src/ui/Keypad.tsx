@@ -12,13 +12,15 @@ type KeypadProps = {
   onKey: (key: string) => void;
   allowDecimal: boolean;
   keyHeight?: number;
+  /** Space between rows of keys. */
+  rowGap?: number;
 };
 
 /** The chunky number pad from the entry screen. Long-press ⌫ to clear. */
-export function Keypad({ onKey, allowDecimal, keyHeight = 46 }: KeypadProps) {
+export function Keypad({ onKey, allowDecimal, keyHeight = 46, rowGap = 10 }: KeypadProps) {
   const rows = [KEYS.slice(0, 3), KEYS.slice(3, 6), KEYS.slice(6, 9), KEYS.slice(9, 12)];
   return (
-    <View style={{ gap: 10 }} accessibilityLabel="Number pad">
+    <View style={{ gap: rowGap }} accessibilityLabel="Number pad">
       {rows.map((row, i) => (
         <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
           {row.map((k) => (

@@ -1,26 +1,25 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 import { unitOf } from '../data/calc';
 import { useData } from '../data/DataProvider';
 import { buildDraft, deriveForm, formProblem, initialForm, PROBLEM_TEXT, type EntryFormState, type EntryParams, type ProblemCode } from '../data/entryForm';
 import { useMoney } from '../data/hooks';
 import { deleteEntry, saveEntry } from '../data/repo';
-import type { Entry, EntryType, SourceKind } from '../data/types';
-import { addMonths, dateRowLabel, formatShortDate } from '../lib/dates';
+import type { Category, Entry, EntryType, SourceKind } from '../data/types';
+import { addMonths, dateRowLabel, formatShortDate, relativeDay } from '../lib/dates';
 import { haptic } from '../lib/haptics';
 import { displayDigits, formatCount, pressKey } from '../lib/money';
 import { useFlip } from '../scenes/Anim';
-import { fontStyle } from '../theme/fonts';
 import { usePrefs } from '../theme/prefs';
-import { usePalette, useTheme } from '../theme/theme';
+import { usePalette } from '../theme/theme';
 import { IconButton, PxButton } from '../ui/Buttons';
-import { Frame } from '../ui/Frame';
-import { Chip, ChipRow, Segmented } from '../ui/Inputs';
+import { Frame, PressFrame } from '../ui/Frame';
+import { Chip, ChipRow, Field, Segmented } from '../ui/Inputs';
 import { Keypad } from '../ui/Keypad';
 import { Rows, RowButton, ToggleRow } from '../ui/Layout';
-import { useDialog, useToast } from '../ui/Overlays';
+import { Sheet, useDialog, useToast } from '../ui/Overlays';
 import { DateSheet, OptionSheet, type OptionItem } from '../ui/Pickers';
 import { SubScreen } from '../ui/Screen';
 import { Sprite } from '../ui/Sprite';
@@ -49,18 +48,16 @@ export default function EntryScreen() {
   return <EntryForm params={params} existing={entry} key={entry?.id ?? 'new'} />;
 }
 
-type Sheet = null | 'source' | 'account' | 'program' | 'fromProgram' | 'liability' | 'payFrom' | 'date';
+type Sheet = null | 'source' | 'account' | 'program' | 'fromProgram' | 'liability' | 'payFrom' | 'date' | 'note';
 
 function EntryForm({ params, existing }: { params: Params; existing: Entry | null }) {
   const data = useData();
   const c = usePalette();
-  const { night, body } = useTheme();
   const { prefs, setPrefs } = usePrefs();
   const { fmt, currency } = useMoney();
   const dialog = useDialog();
   const toast = useToast();
   const [sheet, setSheet] = useState<Sheet>(null);
-  const [noteFocused, setNoteFocused] = useState(false);
 
   const [f, setF] = useState<EntryFormState>(() => initialForm(params, existing, data, prefs, currency.decimals));
   const set = (patch: Partial<EntryFormState>) => setF((prev) => ({ ...prev, ...patch }));
@@ -161,15 +158,15 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
       title={existing ? 'Edit entry' : 'New entry'}
       closeKind="close"
       compact
+      header={existing ? undefined : <Segmented options={TYPES} value={f.type} size={14} height={36} onChange={(type) => set({ type, digits: '' })} />}
       right={existing ? <IconButton icon="iTrash" label="Delete entry" onPress={remove} /> : undefined}
       footer={
-        <View style={{ gap: 12 }}>
-          {noteFocused ? null : <Keypad onKey={onKey} allowDecimal={allowDecimal} />}
-          <PxButton label={saveLabel} icon="iCheck" height={54} size={18} disabled={!!problemCode} onPress={save} />
+        <View style={{ gap: 10 }}>
+          <Keypad onKey={onKey} allowDecimal={allowDecimal} keyHeight={42} rowGap={8} />
+          <PxButton label={saveLabel} icon="iCheck" height={50} size={18} disabled={!!problemCode} onPress={save} />
         </View>
       }
     >
-      {existing ? null : <Segmented options={TYPES} value={f.type} onChange={(type) => set({ type, digits: '' })} />}
 
       <Frame inset={c.cardInset} innerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 11, paddingVertical: 9 }}>
         <View style={{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: c.cardInset }}>
@@ -177,7 +174,7 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }} accessibilityLiveRegion="polite">
           <Txt size={12} weight="bold" upper tracking={0.4} muted numberOfLines={1}>
-            {labels[f.type]}
+            {f.type === 'expense' && category ? `Spent on ${category.name}` : labels[f.type]}
           </Txt>
           <AmountLine
             prefix={f.type === 'miles' ? '' : currency.symbol}
@@ -197,13 +194,8 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
         </View>
       </Frame>
 
-      {f.type === 'expense' ? (
-        <ChipRow label="Category">
-          {data.categories.map((cat) => (
-            <Chip key={cat.id} label={cat.name} icon={cat.icon} on={cat.id === f.categoryId} onPress={() => set({ categoryId: cat.id })} />
-          ))}
-          <Chip label="+ Pouch" on={false} onPress={() => router.push('/budgets')} />
-        </ChipRow>
+      {f.type === 'expense' && data.categories.length > 0 ? (
+        <PouchPicker categories={data.categories} value={f.categoryId} onPick={(categoryId) => set({ categoryId })} />
       ) : null}
       {f.type === 'miles' ? (
         <ChipRow label="Earned or redeemed">
@@ -226,8 +218,14 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
         </Frame>
       ) : null}
 
+      {f.type === 'expense' ? (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <MiniField label="Paid from" value={sourceLabel} flex={1.5} onPress={() => setSheet('source')} />
+          <MiniField label="Date" value={relativeOrShort(f.date)} flex={1} onPress={() => setSheet('date')} />
+          <MiniField label="Note" value={f.note || 'Add'} faint={!f.note} flex={1} onPress={() => setSheet('note')} />
+        </View>
+      ) : (
       <Rows pad={14}>
-        {f.type === 'expense' ? <RowButton label="Paid from" value={sourceLabel} onPress={() => setSheet('source')} /> : null}
         {f.type === 'balance' ? <RowButton label="Account" value={account?.name ?? 'Pick one'} onPress={() => setSheet('account')} /> : null}
         {f.type === 'balance' && account ? (
           <RowButton label="Last counted" value={`${fmt(prevBalance)}${prevCountedAt ? ` · ${formatShortDate(prevCountedAt)}` : ''}`} />
@@ -258,23 +256,19 @@ function EntryForm({ params, existing }: { params: Params; existing: Entry | nul
           />
         ) : null}
         <RowButton label="Date" value={dateRowLabel(f.date)} onPress={() => setSheet('date')} />
-        <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt muted>Note</Txt>
-          <TextInput
-            value={f.note}
-            onChangeText={(note) => set({ note })}
-            placeholder={f.type === 'expense' ? 'e.g. lunch with the team' : f.type === 'miles' ? 'e.g. card spend, flight' : 'Optional'}
-            placeholderTextColor={c.faint}
-            keyboardAppearance={night ? 'dark' : 'light'}
-            onFocus={() => setNoteFocused(true)}
-            onBlur={() => setNoteFocused(false)}
-            returnKeyType="done"
-            maxLength={80}
-            maxFontSizeMultiplier={1.35}
-            style={[fontStyle(body, 'bold'), { flex: 1, fontSize: 15, color: c.ink, textAlign: 'right', paddingVertical: 10 }]}
-          />
-        </View>
+        <RowButton label="Note" value={f.note || 'Optional'} onPress={() => setSheet('note')} />
       </Rows>
+      )}
+
+      <NoteSheet
+        visible={sheet === 'note'}
+        note={f.note}
+        placeholder={f.type === 'expense' ? 'e.g. lunch with the team' : f.type === 'miles' ? 'e.g. card spend, flight' : 'Optional'}
+        onDone={(note) => {
+          set({ note });
+          setSheet(null);
+        }}
+      />
 
       <OptionSheet
         visible={sheet === 'source'}
@@ -366,3 +360,87 @@ const PROBLEM_ACTIONS: Partial<Record<ProblemCode, { label: string; go: () => vo
   noProgram: { label: 'Add a program', go: () => router.push({ pathname: '/program/[id]', params: { id: 'new' } }) },
   noLiability: { label: 'Add a liability', go: () => router.push({ pathname: '/liability/[id]', params: { id: 'new' } }) },
 };
+
+/** "Today", "Yesterday" or "12 Oct": short enough for the compact row. */
+function relativeOrShort(d: Date): string {
+  const r = relativeDay(d);
+  return r === 'Today' || r === 'Yesterday' ? r : formatShortDate(d);
+}
+
+/** Every pouch at once as picture tiles, four to a row; the chosen pouch is named above. */
+function PouchPicker({ categories, value, onPick }: { categories: Category[]; value: string | null; onPick: (id: string) => void }) {
+  const c = usePalette();
+  const rows: Category[][] = [];
+  for (let i = 0; i < categories.length; i += 4) rows.push(categories.slice(i, i + 4));
+  return (
+    <View style={{ gap: 8 }} accessibilityLabel="Pouch">
+      {rows.map((row, i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+          {row.map((cat) => {
+            const on = cat.id === value;
+            return (
+              <PressFrame
+                key={cat.id}
+                style={{ flex: 1 }}
+                border={on ? c.btn : undefined}
+                inset={on ? c.tint.green : undefined}
+                drop={on ? null : undefined}
+                innerStyle={{ height: 46, alignItems: 'center', justifyContent: 'center' }}
+                onPress={() => onPick(cat.id)}
+                accessibilityLabel={on ? `${cat.name}, chosen` : cat.name}
+              >
+                <Sprite name={cat.icon} size={30} />
+              </PressFrame>
+            );
+          })}
+          {Array.from({ length: 4 - row.length }, (_, k) => (
+            <View key={`gap${k}`} style={{ flex: 1 }} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** A small framed button showing one setting: a tiny label over its value. */
+function MiniField({ label, value, onPress, flex, faint }: { label: string; value: string; onPress: () => void; flex: number; faint?: boolean }) {
+  const c = usePalette();
+  return (
+    <PressFrame style={{ flex }} innerStyle={{ paddingHorizontal: 10, paddingVertical: 6, gap: 1 }} onPress={onPress} accessibilityLabel={`${label}: ${value}`}>
+      <Txt size={11} weight="bold" upper tracking={0.4} muted numberOfLines={1}>
+        {label}
+      </Txt>
+      <Txt size={14} weight="bold" color={faint ? c.faint : c.ink} numberOfLines={1}>
+        {value}
+      </Txt>
+    </PressFrame>
+  );
+}
+
+/** Typing a note happens in its own sheet, so the number pad never gets in the way. */
+function NoteSheet({ visible, note, placeholder, onDone }: { visible: boolean; note: string; placeholder: string; onDone: (note: string) => void }) {
+  const [text, setText] = useState(note);
+  const [shownFor, setShownFor] = useState(false);
+  // Start from the saved note each time the sheet opens.
+  if (visible !== shownFor) {
+    setShownFor(visible);
+    if (visible) setText(note);
+  }
+  return (
+    <Sheet visible={visible} title="Note" onClose={() => onDone(text.trim())}>
+      <View style={{ gap: 12 }}>
+        <Field
+          label="What was it for?"
+          value={text}
+          onChangeText={setText}
+          placeholder={placeholder}
+          autoFocus
+          maxLength={80}
+          returnKeyType="done"
+          onSubmitEditing={() => onDone(text.trim())}
+        />
+        <PxButton label="Done" icon="iCheck" onPress={() => onDone(text.trim())} />
+      </View>
+    </Sheet>
+  );
+}

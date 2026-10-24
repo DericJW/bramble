@@ -141,10 +141,12 @@ type SubScreenProps = {
   footer?: ReactNode;
   /** Content starts right under the header instead of tucking into it (screens with a keypad). */
   compact?: boolean;
+  /** Replaces the title (and `right`) next to the back button, e.g. the entry type tabs. */
+  header?: ReactNode;
 };
 
 /** Layout for forms and detail screens: a meadow header strip with a back button. */
-export function SubScreen({ title, onClose, closeKind = 'back', right, children, footer, compact }: SubScreenProps) {
+export function SubScreen({ title, onClose, closeKind = 'back', right, children, footer, compact, header }: SubScreenProps) {
   const { width, tone, night, motion } = useTheme();
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
@@ -180,22 +182,30 @@ export function SubScreen({ title, onClose, closeKind = 'back', right, children,
                 }}
               >
                 <IconButton icon={closeKind === 'close' ? 'iClose' : 'iChevLeft'} label={closeKind === 'close' ? 'Close' : 'Back'} onPress={close} />
-                <View style={{ flex: 1, alignItems: 'center', paddingTop: 10 }}>
-                  <Txt
-                    face="pixel"
-                    weight="bold"
-                    size={22}
-                    lh={28}
-                    center
-                    numberOfLines={1}
-                    shadow={night ? '#0E0B09' : '#FFFDF5'}
-                    shadowSize={3}
-                    accessibilityRole="header"
-                  >
-                    {title}
-                  </Txt>
-                </View>
-                {right ?? <Spacer />}
+                {header ? (
+                  <View style={{ flex: 1, minWidth: 0 }} accessibilityLabel={title}>
+                    {header}
+                  </View>
+                ) : (
+                  <>
+                    <View style={{ flex: 1, alignItems: 'center', paddingTop: 10 }}>
+                      <Txt
+                        face="pixel"
+                        weight="bold"
+                        size={22}
+                        lh={28}
+                        center
+                        numberOfLines={1}
+                        shadow={night ? '#0E0B09' : '#FFFDF5'}
+                        shadowSize={3}
+                        accessibilityRole="header"
+                      >
+                        {title}
+                      </Txt>
+                    </View>
+                    {right ?? <Spacer />}
+                  </>
+                )}
               </View>
             </View>
             <View style={{ paddingHorizontal: 17, gap: 16, marginTop: compact ? 0 : -8 }}>{children}</View>

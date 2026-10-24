@@ -56,11 +56,16 @@ export function Segmented<T extends string>({
   value,
   onChange,
   disabled,
+  size,
+  height = 40,
 }: {
   options: Option<T>[];
   value: T;
   onChange: (v: T) => void;
   disabled?: boolean;
+  /** Label size; smaller fits more options in a narrow space. */
+  size?: number;
+  height?: number;
 }) {
   const { c } = useTheme();
   return (
@@ -78,7 +83,7 @@ export function Segmented<T extends string>({
           >
             <View
               style={{
-                height: 40,
+                height,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: on ? c.btn : 'transparent',
@@ -89,7 +94,7 @@ export function Segmented<T extends string>({
                 opacity: disabled && !on ? 0.4 : 1,
               }}
             >
-              <Txt weight="bold" color={on ? c.btnText : c.ink} numberOfLines={1}>
+              <Txt weight="bold" size={size} color={on ? c.btnText : c.ink} numberOfLines={1}>
                 {o.label}
               </Txt>
             </View>
@@ -119,7 +124,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
       <Label>{label}</Label>
       <Frame drop={null} innerStyle={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 44 }}>
         {prefix ? (
-          <Txt muted weight="bold" size={16} style={{ marginRight: 6 }}>
+          <Txt muted weight="bold" size={16} numberOfLines={1} style={{ marginRight: 6, flexShrink: 0 }}>
             {prefix}
           </Txt>
         ) : null}
@@ -130,10 +135,11 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
           selectionColor={c.leaf}
           maxFontSizeMultiplier={1.35}
           {...input}
-          style={[fontStyle(body, 'bold'), { flex: 1, fontSize: 16, color: c.ink, paddingVertical: 10 }, style]}
+          style={[fontStyle(body, 'bold'), { flex: 1, minWidth: 0, fontSize: 16, color: c.ink, paddingVertical: 10 }, style]}
         />
         {suffix ? (
-          <Txt muted weight="bold" size={15} style={{ marginLeft: 6 }}>
+          // Never squeezed: on iPhone a text box can claim more width than it shows.
+          <Txt muted weight="bold" size={15} numberOfLines={1} style={{ marginLeft: 6, flexShrink: 0 }}>
             {suffix}
           </Txt>
         ) : null}
