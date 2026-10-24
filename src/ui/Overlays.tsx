@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useKeyboardInset } from '../lib/keyboardInset';
 import { useTheme } from '../theme/theme';
 import { IconButton, PxButton } from './Buttons';
 import { Frame } from './Frame';
@@ -24,12 +25,13 @@ export function Sheet({ visible, onClose, title, children, footer }: SheetProps)
   const { c, width } = useTheme();
   const insets = useSafeAreaInsets();
   const { height: winHeight } = useWindowDimensions();
+  const keyboard = useKeyboardInset();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.bottom}>
+      <View style={[styles.bottom, keyboard > 0 ? { paddingBottom: keyboard } : null]}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: c.scrim }]} onPress={onClose} accessibilityLabel="Close" />
         <View style={{ width, paddingHorizontal: 8 }}>
-          <Frame drop={null} innerStyle={{ paddingBottom: Math.max(insets.bottom, 12) }}>
+          <Frame drop={null} innerStyle={{ paddingBottom: keyboard > 0 ? 12 : Math.max(insets.bottom, 12) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 }}>
               <Txt face="pixel" weight="bold" size={20} lh={26} style={{ flex: 1 }} accessibilityRole="header">
                 {title}
@@ -37,7 +39,7 @@ export function Sheet({ visible, onClose, title, children, footer }: SheetProps)
               <IconButton icon="iClose" label="Close" size={36} onPress={onClose} />
             </View>
             <ScrollView
-              style={{ flexGrow: 0, maxHeight: Math.round(winHeight * (footer ? 0.56 : 0.64)) }}
+              style={{ flexGrow: 0, maxHeight: Math.max(160, Math.round((winHeight - keyboard) * (footer ? 0.56 : 0.64))) }}
               contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
               keyboardShouldPersistTaps="handled"
             >
