@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
 
 import { fontStyle } from '../theme/fonts';
@@ -115,14 +115,19 @@ type FieldProps = TextInputProps & {
 
 /** Labelled text box in a pixel frame. */
 export const Field = forwardRef<TextInput, FieldProps>(function Field(
-  { label, hint, error, prefix, suffix, style, ...input },
+  { label, hint, error, prefix, suffix, style, onFocus, onBlur, ...input },
   ref,
 ) {
   const { c, night, body } = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={{ gap: 6 }}>
       <Label>{label}</Label>
-      <Frame drop={null} innerStyle={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 44 }}>
+      <Frame
+        drop={null}
+        border={focused ? c.btn : undefined}
+        innerStyle={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 44 }}
+      >
         {prefix ? (
           <Txt muted weight="bold" size={16} numberOfLines={1} style={{ marginRight: 6, flexShrink: 0 }}>
             {prefix}
@@ -135,6 +140,14 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
           selectionColor={c.leaf}
           maxFontSizeMultiplier={1.35}
           {...input}
+          onFocus={(...args: Parameters<NonNullable<TextInputProps['onFocus']>>) => {
+            setFocused(true);
+            onFocus?.(...args);
+          }}
+          onBlur={(...args: Parameters<NonNullable<TextInputProps['onBlur']>>) => {
+            setFocused(false);
+            onBlur?.(...args);
+          }}
           style={[fontStyle(body, 'bold'), { flex: 1, minWidth: 0, fontSize: 16, color: c.ink, paddingVertical: 10 }, style]}
         />
         {suffix ? (
