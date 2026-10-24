@@ -21,7 +21,7 @@ export type StoreState = {
   farm: Farm;
 };
 
-const KEY = 'hedgerow:farm:v1';
+const KEY = 'bramble:farm:v1';
 
 let state: StoreState = { loaded: false, error: null, farm: emptyFarm() };
 const listeners = new Set<() => void>();

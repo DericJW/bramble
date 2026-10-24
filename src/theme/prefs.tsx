@@ -38,7 +38,7 @@ export const DEFAULT_PREFS: Prefs = {
   lastBackupAt: null,
 };
 
-const KEY = 'hedgerow:prefs:v1';
+const KEY = 'bramble:prefs:v1';
 
 type PrefsContextValue = {
   prefs: Prefs;

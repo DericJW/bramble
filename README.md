@@ -1,4 +1,4 @@
-# Hedgerow
+# Bramble
 
 A cosy pixel-countryside ledger for your **money**, **miles**, **spending** and **what you owe**.
 Everything is keyed in by you, nothing connects to your bank, and **your data stays on your
@@ -32,8 +32,8 @@ GitHub Pages only serves the app itself. That also means:
 
 - **Export a backup now and then** (Settings → Your data → Export backup) and keep the file in
   iCloud Drive or Files. **Restore from a backup** brings it back, on the same phone or a new one.
-- Removing Hedgerow from your Home Screen deletes its data with it.
-- The Home Screen app and Safari keep separate storage. Always open Hedgerow from its icon.
+- Removing Bramble from your Home Screen deletes its data with it.
+- The Home Screen app and Safari keep separate storage. Always open Bramble from its icon.
 
 ---
 
@@ -45,8 +45,8 @@ publishes it to GitHub Pages.
 1. On GitHub, open the repository → **Settings → Pages** and set **Source** to **GitHub Actions**
    (once).
 2. Wait for the **Deploy to GitHub Pages** run under the **Actions** tab to finish (about 3 minutes).
-3. On your iPhone, open `https://<your-username>.github.io/hedgerow/` in **Safari**.
-4. Tap **Share → Add to Home Screen**, then open Hedgerow from its new icon.
+3. On your iPhone, open `https://<your-username>.github.io/bramble/` in **Safari**.
+4. Tap **Share → Add to Home Screen**, then open Bramble from its new icon.
 5. Pick your currency and start fresh, or explore the sample farm first.
 
 After the first open it works without an internet connection. When a new version is pushed, the
@@ -130,9 +130,9 @@ public/           Web app shell, manifest and icons
 
 ## History
 
-The first commit in this repository is the earlier Firebase version (cloud sync with sign-in).
+The first commit in this repository is the earlier Firebase version (cloud sync with sign-in), from when the app was called Hedgerow.
 
 ## Credits
 
-Pixel art, the scenes and Bramble were drawn for Hedgerow. Fonts: [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans)
+Pixel art, the scenes and Bramble were drawn for Bramble. Fonts: [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans)
 and [Zen Maru Gothic](https://fonts.google.com/specimen/Zen+Maru+Gothic), both under the SIL Open Font License.

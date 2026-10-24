@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Hedgerow",
-    "slug": "hedgerow",
+    "name": "Bramble",
+    "slug": "bramble",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hedgerow",
+    "scheme": "bramble",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#EEDFBD",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.hedgerow.ledger"
+      "bundleIdentifier": "app.bramble.ledger"
     },
     "android": {
-      "package": "app.hedgerow.ledger",
+      "package": "app.bramble.ledger",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#9DD0EC"
@@ -23,8 +23,8 @@
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "name": "Hedgerow",
-      "shortName": "Hedgerow",
+      "name": "Bramble",
+      "shortName": "Bramble",
       "themeColor": "#7A4A2A",
       "backgroundColor": "#EEDFBD"
     },

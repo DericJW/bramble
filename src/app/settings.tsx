@@ -51,7 +51,7 @@ export default function SettingsScreen() {
   const countDays = String(data.settings.countEveryDays);
 
   const exportBackup = () => {
-    const name = `hedgerow-backup-${dayKey(new Date())}.json`;
+    const name = `bramble-backup-${dayKey(new Date())}.json`;
     // Straight from the tap, so the share sheet is allowed to open.
     saveBackup(name, backupText())
       .then((result) => {
@@ -69,7 +69,7 @@ export default function SettingsScreen() {
     try {
       backup = readBackup(text.trim());
     } catch (e) {
-      await dialog.alert('Can’t use that backup', e instanceof Error ? e.message : 'That isn’t a Hedgerow backup.');
+      await dialog.alert('Can’t use that backup', e instanceof Error ? e.message : 'That isn’t a Bramble backup.');
       return;
     }
     const when = backup.exportedAt ? ` from ${formatLongDate(backup.exportedAt)}` : '';
@@ -178,13 +178,13 @@ export default function SettingsScreen() {
       </Frame>
 
       <Txt size={13} muted center style={{ marginTop: 8 }}>
-        {`Hedgerow ${version} · made with care by Bramble`}
+        {`Bramble ${version} · made with care by a small hedgehog`}
       </Txt>
 
       <Sheet visible={pasteOpen} title="Restore from a backup" onClose={() => setPasteOpen(false)}>
         <View style={{ gap: 12 }}>
           <Txt muted lh={20}>
-            Paste the text of a Hedgerow backup here.
+            Paste the text of a Bramble backup here.
           </Txt>
           <Field label="Backup" value={pasted} onChangeText={setPasted} multiline autoCapitalize="none" autoCorrect={false} placeholder="Paste the backup text" style={{ maxHeight: 160 }} />
           <PxButton label="Restore" busy={busy} disabled={!pasted.trim()} onPress={() => restore(pasted)} />

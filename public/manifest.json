@@ -1,6 +1,6 @@
 {
-  "short_name": "Hedgerow",
-  "name": "Hedgerow – money, miles and more",
+  "short_name": "Bramble",
+  "name": "Bramble – money, miles and more",
   "description": "A cosy pixel ledger for your money, miles, spending and what you owe.",
   "icons": [
     { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },

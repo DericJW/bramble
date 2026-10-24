@@ -10,7 +10,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  *   version instead, which is what `npm run publish:apk` targets.
  * - updates.url: filled in from the EAS project id once `eas init` has run.
  * - experiments.baseUrl: the web app's folder when it is hosted below the domain root, such as
- *   GitHub Pages (https://you.github.io/hedgerow/). Set EXPO_BASE_URL=/hedgerow when building.
+ *   GitHub Pages (https://you.github.io/bramble/). Set EXPO_BASE_URL=/bramble when building.
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
   const forExpoGo = process.env.EXPO_GO_UPDATE === '1';
@@ -26,8 +26,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     experiments: baseUrl ? { ...(config.experiments ?? {}), baseUrl } : config.experiments,
-    name: config.name ?? 'Hedgerow',
-    slug: config.slug ?? 'hedgerow',
+    name: config.name ?? 'Bramble',
+    slug: config.slug ?? 'bramble',
     runtimeVersion,
     updates: projectId
       ? { ...(config.updates ?? {}), url: `https://u.expo.dev/${projectId}` }

@@ -12,7 +12,7 @@ export async function saveBackup(filename: string, text: string): Promise<SaveRe
   const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: 'Hedgerow backup' });
+      await nav.share({ files: [file], title: 'Bramble backup' });
       return 'saved';
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return 'cancelled';

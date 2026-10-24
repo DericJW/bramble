@@ -21,7 +21,7 @@ export type Farm = {
   snapshots: Snapshot[];
 };
 
-export const BACKUP_APP = 'hedgerow';
+export const BACKUP_APP = 'bramble';
 export const BACKUP_VERSION = 1;
 
 export function emptyFarm(): Farm {
@@ -80,12 +80,12 @@ export function readBackup(text: string): ParsedBackup {
   try {
     raw = JSON.parse(text);
   } catch {
-    throw new Error('That file isn’t a Hedgerow backup.');
+    throw new Error('That file isn’t a Bramble backup.');
   }
   const r = (raw && typeof raw === 'object' ? raw : {}) as Raw;
-  if (r.app !== BACKUP_APP || !r.farm || typeof r.farm !== 'object') throw new Error('That file isn’t a Hedgerow backup.');
+  if (r.app !== BACKUP_APP || !r.farm || typeof r.farm !== 'object') throw new Error('That file isn’t a Bramble backup.');
   if (typeof r.version === 'number' && r.version > BACKUP_VERSION) {
-    throw new Error('This backup comes from a newer version of Hedgerow. Update the app first.');
+    throw new Error('This backup comes from a newer version of Bramble. Update the app first.');
   }
   const farm = parseFarm(r.farm);
   if (!farm.settings) throw new Error('That backup has no farm in it.');

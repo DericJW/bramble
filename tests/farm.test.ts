@@ -126,9 +126,9 @@ describe('saving and backups', () => {
   });
 
   test('other files are turned away with a clear message', () => {
-    assert.throws(() => readBackup('hello'), /isn’t a Hedgerow backup/);
-    assert.throws(() => readBackup('{"app":"other","farm":{}}'), /isn’t a Hedgerow backup/);
-    assert.throws(() => readBackup('{"app":"hedgerow","version":99,"farm":{"settings":{}}}'), /newer version/);
-    assert.throws(() => readBackup('{"app":"hedgerow","version":1,"farm":{}}'), /no farm/);
+    assert.throws(() => readBackup('hello'), /isn’t a Bramble backup/);
+    assert.throws(() => readBackup('{"app":"other","farm":{}}'), /isn’t a Bramble backup/);
+    assert.throws(() => readBackup('{"app":"bramble","version":99,"farm":{"settings":{}}}'), /newer version/);
+    assert.throws(() => readBackup('{"app":"bramble","version":1,"farm":{}}'), /no farm/);
   });
 });

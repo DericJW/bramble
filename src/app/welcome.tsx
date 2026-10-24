@@ -63,7 +63,7 @@ export default function WelcomeScreen() {
               <RowButton label="Your currency" value={`${cur.code} (${cur.symbol.trim()})`} onPress={() => setOpen(true)} />
             </Rows>
             <Txt size={13} muted>
-              Used for every amount. Hedgerow tracks one currency.
+              Used for every amount. Bramble tracks one currency.
             </Txt>
           </Frame>
           <PxButton label="Start fresh" icon="iCheck" height={54} size={17} busy={busy === 'fresh'} disabled={busy !== null} onPress={() => start('fresh')} />
